@@ -1,17 +1,19 @@
-#!/usr/bin/env python
+import asyncio
+from fastapi import FastAPI, File, UploadFile
+from PIL import Image
+import numpy as np
+import uuid
+import aiofiles
 
-DEBUG = True
 
-if DEBUG:
-    from PIL import Image
-    import numpy as np
+app = FastAPI()
 
-    def read_image(path):
-        return np.asarray(Image.open(path).convert('L'))
+def read_image(path):
+    return np.asarray(Image.open(path).convert('L'))
 
-    def write_image(image, path):
-        img = Image.fromarray(np.array(image), 'L')
-        img.save(path)
+def write_image(image, path):
+    img = Image.fromarray(np.array(image), 'L')
+    img.save(path)
 
 
 DATA_DIR = 'data/'
@@ -113,62 +115,33 @@ def knn(X_train, y_train, X_test, k=3):
     return y_pred
 
 
-def get_garment_from_label(label):
-    return [
-        'T-shirt/top',
-        'Trouser',
-        'Pullover',
-        'Dress',
-        'Coat',
-        'Sandal',
-        'Shirt',
-        'Sneaker',
-        'Bag',
-        'Ankle boot',
-    ][label]
+k = None
+y_train = None
+X_train = None
 
-
-def main():
+def startup():
+    global k
+    global y_train
+    global X_train
     n_train = 1000
-    n_test = 10
     k = 7
-    print(f'Dataset: {DATASET}')
-    print(f'n_train: {n_train}')
-    print(f'n_test: {n_test}')
-    print(f'k: {k}')
     X_train = read_images(TRAIN_DATA_FILENAME, n_train)
     y_train = read_labels(TRAIN_LABELS_FILENAME, n_train)
-    X_test = read_images(TEST_DATA_FILENAME, n_test)
-    y_test = read_labels(TEST_LABELS_FILENAME, n_test)
-
-    if DEBUG:
-        # for idx, test_sample in enumerate(X_test):
-        #     write_image(test_sample, f'{TEST_DIR}{idx}.png')
-        X_test = [read_image(f'{DATA_DIR}our_test.png')]
-        y_test = [3]
-
     X_train = extract_features(X_train)
+
+startup()
+
+def read_ocr_file(file_path):
+    X_test = [read_image(file_path)]
     X_test = extract_features(X_test)
+    return knn(X_train, y_train, X_test, k)
+   
 
-    y_pred = knn(X_train, y_train, X_test, k)
+@app.post("/read/")
+async def read_ocr(file: bytes = File(...)):
+    filePath = f'{DATA_DIR}/{str(uuid.uuid4())}.png'
+    
+    async with aiofiles.open(filePath, 'wb') as out_file:
+        await out_file.write(file)
 
-    accuracy = sum([
-        int(y_pred_i == y_test_i)
-        for y_pred_i, y_test_i
-        in zip(y_pred, y_test)
-    ]) / len(y_test)
-
-    if DATASET == 'fashion-mnist':
-        garments_pred = [
-            get_garment_from_label(label)
-            for label in y_pred
-        ]
-        print(f'Predicted garments: {garments_pred}')
-    else:
-        print(f'Predicted labels: {y_pred}')
-
-    print(f'Accuracy: {accuracy * 100}%')
-
-
-if __name__ == '__main__':
-    main()
+    return {"predictions": read_ocr_file(filePath)}
