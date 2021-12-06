@@ -6,6 +6,8 @@ import uuid
 import aiofiles
 
 app = FastAPI()
+
+DEBUG = False
 DATA_DIR = 'data/'
 TEST_DIR = 'test/'
 DATASET = 'mnist' 
@@ -13,9 +15,9 @@ TEST_DATA_FILENAME = DATA_DIR + DATASET + '/t10k-images-idx3-ubyte'
 TEST_LABELS_FILENAME = DATA_DIR + DATASET + '/t10k-labels-idx1-ubyte'
 TRAIN_DATA_FILENAME = DATA_DIR + DATASET + '/train-images-idx3-ubyte'
 TRAIN_LABELS_FILENAME = DATA_DIR + DATASET + '/train-labels-idx1-ubyte'
-k = None
-y_train = None
-X_train = None
+K = None
+Y_TRAIN = None
+X_TRAIN = None
 
 def custom_openapi():
     if app.openapi_schema:
@@ -34,7 +36,10 @@ app.openapi = custom_openapi
 
 def read_image(path):
     img = Image.open(path)
-    img = img.resize((28,28), Image.ANTIALIAS)
+    img = img.resize((28,28), Image.NEAREST)
+    if DEBUG:
+        img.save("last_processed.png")
+
     return np.asarray(img.convert('L'))
 
 def write_image(image, path):
@@ -132,21 +137,21 @@ def knn(X_train, y_train, X_test, k=3):
     return y_pred
 
 def startup():
-    global k
-    global y_train
-    global X_train
+    global K
+    global Y_TRAIN
+    global X_TRAIN
     n_train = 1000
-    k = 7
-    X_train = read_images(TRAIN_DATA_FILENAME, n_train)
-    y_train = read_labels(TRAIN_LABELS_FILENAME, n_train)
-    X_train = extract_features(X_train)
+    K = 7
+    X_TRAIN = read_images(TRAIN_DATA_FILENAME, n_train)
+    Y_TRAIN = read_labels(TRAIN_LABELS_FILENAME, n_train)
+    X_TRAIN = extract_features(X_TRAIN)
 
 startup()
 
 def read_ocr_file(file_path):
     X_test = [read_image(file_path)]
     X_test = extract_features(X_test)
-    return knn(X_train, y_train, X_test, k)
+    return knn(X_TRAIN, Y_TRAIN, X_test, K)
    
 
 @app.post("/read/")
