@@ -1,21 +1,10 @@
-import asyncio
-from fastapi import FastAPI, File, UploadFile
+from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI, File
 from PIL import Image
 import numpy as np
 import uuid
 import aiofiles
-
-
 app = FastAPI()
-
-def read_image(path):
-    return np.asarray(Image.open(path).convert('L'))
-
-def write_image(image, path):
-    img = Image.fromarray(np.array(image), 'L')
-    img.save(path)
-
-
 DATA_DIR = 'data/'
 TEST_DIR = 'test/'
 DATASET = 'mnist' # or `'fashion-mnist'`
@@ -23,6 +12,32 @@ TEST_DATA_FILENAME = DATA_DIR + DATASET + '/t10k-images-idx3-ubyte'
 TEST_LABELS_FILENAME = DATA_DIR + DATASET + '/t10k-labels-idx1-ubyte'
 TRAIN_DATA_FILENAME = DATA_DIR + DATASET + '/train-images-idx3-ubyte'
 TRAIN_LABELS_FILENAME = DATA_DIR + DATASET + '/train-labels-idx1-ubyte'
+k = None
+y_train = None
+X_train = None
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="OCR",
+        version="1.0.0",
+        description="OpenAPI para a aplicação de reconhecimento de caracteres (OCR)",
+        routes=app.routes,
+    )
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+def read_image(path):
+    return np.asarray(Image.open(path).convert('L'))
+
+
+def write_image(image, path):
+    img = Image.fromarray(np.array(image), 'L')
+    img.save(path)
 
 
 def bytes_to_int(byte_data):
@@ -114,11 +129,6 @@ def knn(X_train, y_train, X_test, k=3):
     print()
     return y_pred
 
-
-k = None
-y_train = None
-X_train = None
-
 def startup():
     global k
     global y_train
@@ -138,10 +148,10 @@ def read_ocr_file(file_path):
    
 
 @app.post("/read/")
-async def read_ocr(file: bytes = File(...)):
-    filePath = f'{DATA_DIR}/{str(uuid.uuid4())}.png'
+async def ocr(file: bytes = File(...)):
+    file_path = f'{DATA_DIR}/{str(uuid.uuid4())}.png'
     
-    async with aiofiles.open(filePath, 'wb') as out_file:
+    async with aiofiles.open(file_path, 'wb') as out_file:
         await out_file.write(file)
 
-    return {"predictions": read_ocr_file(filePath)}
+    return read_ocr_file(file_path)
