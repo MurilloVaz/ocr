@@ -12,7 +12,7 @@ Utiliza KNN (k-nearest neighbors), efetuando o reconhecimento de digitos usando 
 Para executar o projeto:
 ```
 $ pip install -r requirements.txt
-$ uvicorn ocr:app --port 8000
+$ uvicorn main:app --port 8000
 ```
 
 Para acessar o endpoint de reconhecimento de digitos, as seguinte opções são as mais práticas.
