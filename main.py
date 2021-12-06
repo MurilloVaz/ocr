@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import uuid
 import aiofiles
+
 app = FastAPI()
 DATA_DIR = 'data/'
 TEST_DIR = 'test/'
@@ -32,8 +33,9 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 def read_image(path):
-    return np.asarray(Image.open(path).convert('L'))
-
+    img = Image.open(path)
+    img = img.resize((28,28), Image.ANTIALIAS)
+    return np.asarray(img.convert('L'))
 
 def write_image(image, path):
     img = Image.fromarray(np.array(image), 'L')
@@ -149,7 +151,7 @@ def read_ocr_file(file_path):
 
 @app.post("/read/")
 async def read_digit(file: bytes = File(...)):
-    file_path = f'{DATA_DIR}/{str(uuid.uuid4())}.png'
+    file_path = f'{DATA_DIR}{str(uuid.uuid4())}.png'
     
     async with aiofiles.open(file_path, 'wb') as out_file:
         await out_file.write(file)
