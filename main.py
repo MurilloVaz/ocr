@@ -7,7 +7,7 @@ import aiofiles
 app = FastAPI()
 DATA_DIR = 'data/'
 TEST_DIR = 'test/'
-DATASET = 'mnist' # or `'fashion-mnist'`
+DATASET = 'mnist' 
 TEST_DATA_FILENAME = DATA_DIR + DATASET + '/t10k-images-idx3-ubyte'
 TEST_LABELS_FILENAME = DATA_DIR + DATASET + '/t10k-labels-idx1-ubyte'
 TRAIN_DATA_FILENAME = DATA_DIR + DATASET + '/train-images-idx3-ubyte'
@@ -148,7 +148,7 @@ def read_ocr_file(file_path):
    
 
 @app.post("/read/")
-async def ocr(file: bytes = File(...)):
+async def read_digit(file: bytes = File(...)):
     file_path = f'{DATA_DIR}/{str(uuid.uuid4())}.png'
     
     async with aiofiles.open(file_path, 'wb') as out_file:
