@@ -1,5 +1,7 @@
 # OCR
-Este algoritmo utiliza KNN (k-nearest neighbors), efetuando o reconhecimento de caracteres usando um conjunto de dados de treinamento diretamente.
+Esta é uma API REST, com o intuito de processar imagens, em ordem de reconhecer caracteres, mais especificamente, digitos. 
+
+Utiliza KNN (k-nearest neighbors), efetuando o reconhecimento de digitos usando um conjunto de dados de treinamento diretamente.
 
 # Pre-reqs
 - Python3
@@ -7,12 +9,22 @@ Este algoritmo utiliza KNN (k-nearest neighbors), efetuando o reconhecimento de 
 
 # Instruções de execução
 
-Altere a imagem no diretório **data/our_test.png** para o caractere que será identificado
+Para executar o projeto:
 ```
 $ pip install -r requirements.txt
-$ python3 ocr.py
+$ uvicorn ocr:app --port 8000
 ```
+
+Para acessar o endpoint de reconhecimento de digitos, as seguinte opções são as mais práticas.
+
+Via shell script:
+```
+$ test.sh file_name_here.png
+```
+
+Via Swagger:
+http://127.0.0.1:8000/docs
 
 # To do
 - Extração de caracteres
-- Rest API
+- Reconhecimento de qualquer tipo de caracter
